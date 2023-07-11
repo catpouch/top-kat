@@ -1,7 +1,7 @@
 from hyperloglog import HyperLogLog
 import pickle
 
-f = open("benchmarks/data", "rb")
+f = open("benchmarks/hll_data", "rb")
 
 data = pickle.load(f)
 

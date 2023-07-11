@@ -11,12 +11,6 @@ enum TKPyHashable {
     TKPyBytes(Vec<u8>),
 }
 
-// #[derive(New)] //oops!
-// enum TKPyIntersectable {
-//     TKPyU64(u64),
-//     TKPyUSize(usize)
-// }
-
 impl FromPyObject<'_> for TKPyHashable {
     fn extract(ob: &'_ PyAny) -> PyResult<Self> {
         if let Ok(val) = ob.extract::<i32>() {
@@ -57,21 +51,34 @@ impl HyperLogLog {
             inner: streaming_algorithms::HyperLogLog::new(error_rate),
         }
     }
+    /// Adds a new element to the set.
     fn push(&mut self, value: TKPyHashable) {
         self.inner.push(&value);
     }
+    /// Returns the approximate cardinality of the set as a float.
     fn len(&self) -> f64 {
         self.inner.len()
     }
+    /// Returns a boolean representing whether the set is empty.
     fn is_empty(&self) -> bool {
         self.inner.is_empty()
     }
+    /// Merges a second HyperLogLog object into this one.
+    /// 
+    /// Modifies the HyperLogLog it's called on such that its cardinality approximates the cardinality of the combination of its set and the second HyperLogLog's set.
+    /// 
+    /// Args:
+    ///     src: A different HyperLogLog instance.
     fn union(&mut self, src: &Self) {
         self.inner.union(&src.inner);
     }
+    /// Intersects a second HyperLogLog object into this one.
+    /// 
+    /// TODO
     fn intersect(&mut self, src: &Self) {
         self.inner.intersect(&src.inner);
     }
+    /// Empties the set of the HyperLogLog object.
     fn clear(&mut self) {
         self.inner.clear();
     }
@@ -90,15 +97,25 @@ impl TopK {
             inner: streaming_algorithms::Top::new(n, probability, tolerance, ())
         }
     }
+    /// Adds a new element to the set
+    /// 
+    /// Pushes a key and a count number to the total counted set.
+    /// 
+    /// Args:
+    ///     item: A Python object representing the key to be pushed.
+    ///     value: The count of items to be pushed.
     fn push(&mut self, item: TKPyHashable, value: u64) {
         self.inner.push(item, &value);
     }
+    /// Returns the top n counted items from the set.
     fn top(&self) -> Vec<(TKPyHashable, u64)> {
         self.inner.iter().map(|(key, count)| (key.clone(), count.clone())).collect()
     }
+    /// Returns the capacity of the TopK object.
     fn capacity(&self) -> usize {
         self.inner.capacity()
     }
+    /// Empties the set of the TopK object.
     fn clear(&mut self) {
         self.inner.clear();
     }
