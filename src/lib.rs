@@ -1,7 +1,8 @@
 use pyo3::prelude::*;
 use pyo3::exceptions::PyTypeError;
 use streaming_algorithms;
-// use streaming_algorithms::New;
+use rand::rngs::StdRng;
+use rand::SeedableRng;
 
 #[derive(Hash, Clone, PartialEq, Eq)]
 enum TKPyHashable {
@@ -121,10 +122,54 @@ impl TopK {
     }
 }
 
-/// A Python module implemented in Rust.
+#[pyclass]
+struct SampleTotal {
+    inner: streaming_algorithms::SampleTotal,
+    rng: StdRng,
+}
+
+#[pymethods]
+impl SampleTotal {
+    #[new]
+    fn new(total: usize, samples: usize, seed: Option<u64>) -> Self {
+        Self {
+            inner: streaming_algorithms::SampleTotal::new(total, samples),
+            rng: if seed.is_some() {StdRng::seed_from_u64(seed.unwrap_or(0))} else {StdRng::from_entropy()}
+        }
+    }
+    fn sample(&mut self) -> bool {
+        self.inner.sample(&mut self.rng)
+    }
+}
+
+#[pyclass]
+struct SampleUnstable {
+    inner: streaming_algorithms::SampleUnstable<Py<PyAny>>,
+    rng: StdRng,
+}
+
+#[pymethods]
+impl SampleUnstable {
+    #[new]
+    fn new(samples: usize, seed: Option<u64>) -> Self {
+        Self {
+            inner: streaming_algorithms::SampleUnstable::new(samples),
+            rng: if seed.is_some() {StdRng::seed_from_u64(seed.unwrap_or(0))} else {StdRng::from_entropy()}
+        }
+    }
+    fn push(&mut self, t: Py<PyAny>) {
+        self.inner.push(t, &mut self.rng)
+    }
+    fn reservoir(&mut self) -> Vec<Py<PyAny>> {
+        self.inner.clone().into_iter().collect()
+    }
+}
+
 #[pymodule]
 fn top_kat(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_class::<HyperLogLog>()?;
     m.add_class::<TopK>()?;
+    m.add_class::<SampleTotal>()?;
+    m.add_class::<SampleUnstable>()?;
     Ok(())
 }
