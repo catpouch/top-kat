@@ -1,4 +1,5 @@
 from top_kat import HyperLogLog
+from datetime import datetime
 
 data = list(range(10))
 
@@ -7,6 +8,12 @@ def test_push():
     for x in data:
         hll.push(x)
     assert round(hll.len()) == len(data)
+
+def test_object_push():
+    hll = HyperLogLog(0.00408)
+    for i in range(10):
+        hll.push(datetime(2023, 7, 13, i + 10, 52, 30, 100))
+    assert round(hll.len()) == 10
 
 def test_empty():
     hll = HyperLogLog(0.00408)
