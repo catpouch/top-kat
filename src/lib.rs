@@ -92,9 +92,6 @@ struct HyperLogLog {
 
 #[pymethods]
 impl HyperLogLog {
-    /// __init__(error_rate)
-    /// --
-    ///
     /// Initializes instance with specified error tolerance.
     ///
     /// Args:
@@ -105,16 +102,10 @@ impl HyperLogLog {
             inner: streaming_algorithms::HyperLogLog::new(error_rate),
         }
     }
-    /// push(value)
-    /// --
-    ///
     /// Adds a new element to the set.
     fn push(&mut self, value: TKPyHashable) {
         self.inner.push(&value);
     }
-    /// len()
-    /// --
-    ///
     /// Returns the approximate cardinality of the set as a float.
     fn len(&self) -> f64 {
         self.inner.len()
@@ -123,30 +114,18 @@ impl HyperLogLog {
     fn is_empty(&self) -> bool {
         self.inner.is_empty()
     }
-    /// union(src)
-    /// --
-    ///
     /// Merges a second HyperLogLog object into this one.
     ///
     /// Modifies the HyperLogLog it's called on such that its cardinality approximates the cardinality of the combination of its set and the second HyperLogLog's set.
-    ///
-    /// Args:
-    ///     src: A different HyperLogLog instance.
     fn union(&mut self, src: &Self) {
         self.inner.union(&src.inner);
     }
-    /// intersect(src)
-    /// --
-    ///
     /// Intersects a second HyperLogLog object into this one.
     ///
     /// TODO
     fn intersect(&mut self, src: &Self) {
         self.inner.intersect(&src.inner);
     }
-    /// clear()
-    /// --
-    ///
     /// Empties the set of the HyperLogLog object.
     fn clear(&mut self) {
         self.inner.clear();
@@ -161,9 +140,6 @@ struct TopK {
 
 #[pymethods]
 impl TopK {
-    /// __init__(k, probability, tolerance)
-    /// --
-    ///
     /// Initializes instance with size k, probability, and tolerance. More documentation needed.
     ///
     /// Args:
@@ -176,22 +152,10 @@ impl TopK {
             inner: streaming_algorithms::Top::new(k, probability, tolerance, ()),
         }
     }
-    /// push(item, count)
-    /// --
-    ///
-    /// Adds a new element to the set.
-    ///
     /// Pushes a key and a count number to the total counted set.
-    ///
-    /// Args:
-    ///     item: A Python object representing the key to be pushed.
-    ///     count: The count of items to be pushed.
     fn push(&mut self, item: TKPyHashable, count: u64) {
         self.inner.push(item, &count);
     }
-    /// top()
-    /// --
-    ///
     /// Returns the top n counted items from the set.
     fn top(&self) -> Vec<(TKPyHashable, u64)> {
         self.inner
@@ -199,36 +163,27 @@ impl TopK {
             .map(|(key, count)| (key.clone(), count.clone()))
             .collect()
     }
-    /// capacity()
-    /// --
-    ///
     /// Returns the capacity of the TopK object.
     fn capacity(&self) -> usize {
         self.inner.capacity()
     }
-    /// clear()
-    /// --
-    ///
     /// Empties the set of the TopK object.
     fn clear(&mut self) {
         self.inner.clear();
     }
 }
 
-/// Given population and sample sizes, returns true if this element is in the sample. Without replacement.
+/// A wrapper class for a simple random sample algorithm.
 ///
-/// Needs clarification, possible removal? Doesn't seem too complicated to just implement on your own.
+/// Takes a population size and sample size, then randomly removes elements and returns true if they are within the sample.
 #[pyclass]
-struct SampleTotal {
+struct SimpleRandomSample {
     inner: streaming_algorithms::SampleTotal,
     rng: StdRng,
 }
 
 #[pymethods]
-impl SampleTotal {
-    /// __init__(total, samples, seed)
-    /// --
-    ///
+impl SimpleRandomSample {
     /// Initializes instance with population size, sample size, and optional random seed.
     ///
     /// More documentation on args needed.
@@ -249,27 +204,23 @@ impl SampleTotal {
             rng,
         }
     }
-    /// sample()
-    /// --
-    ///
     /// Picks a random element from the set, then returns true if within sample.
     fn sample(&mut self) -> bool {
         self.inner.sample(&mut self.rng)
     }
 }
 
-/// A wrapper class for a rolling implementation of reservoir sampling.
+/// A wrapper class for an implementation of reservoir sampling.
+///
+/// Holds a reservoir which fills with items as they are added to the stream. The order of items in the reservoir is unstable.
 #[pyclass]
-struct SampleUnstable {
+struct UnstableReservoirSample {
     inner: streaming_algorithms::SampleUnstable<Py<PyAny>>,
     rng: StdRng,
 }
 
 #[pymethods]
-impl SampleUnstable {
-    /// __init__(samples, seed)
-    /// --
-    ///
+impl UnstableReservoirSample {
     /// Initializes instance with sample size and optional random seed.
     ///
     /// Args:
@@ -287,22 +238,52 @@ impl SampleUnstable {
             rng,
         }
     }
-    /// push(t)
-    /// --
-    ///
     /// Pushes a new item into the population.
-    ///
-    /// Args:
-    ///     t: Item to push.
     fn push(&mut self, t: Py<PyAny>) {
         self.inner.push(t, &mut self.rng)
     }
-    /// reservoir()
-    /// --
-    ///
     /// Returns the current reservoir as a list.
     fn reservoir(&mut self) -> Vec<Py<PyAny>> {
         self.inner.clone().into_iter().collect()
+    }
+}
+
+/// An implementation of the CountMinSketch data structure.
+/// 
+/// Also referred to as the counting Bloom filter, keeps approximate track of values associated with keys while using sub-linear space.
+#[pyclass]
+struct CountMinSketch {
+    inner: streaming_algorithms::CountMinSketch<TKPyHashable, u64>,
+}
+
+#[pymethods]
+impl CountMinSketch {
+    /// Initializes instance with probability and error tolerance.
+    /// 
+    /// Args:
+    ///     probability: TODO
+    ///     tolerance: Accepted error tolerance. TODO
+    #[new]
+    fn new(probability: f64, tolerance: f64) -> Self {
+        Self {
+            inner: streaming_algorithms::CountMinSketch::new(probability, tolerance, ()),
+        }
+    }
+    /// Pushes a key/value pair to the total counted set.
+    fn push(&mut self, key: TKPyHashable, value: u64) -> u64 {
+        self.inner.push(&key, &value)
+    }
+    /// Unions the aggregated value for a key with another value.
+    fn union_assign(&mut self, key: TKPyHashable, value: u64) {
+        self.inner.union_assign(&key, &value);
+    }
+    /// Gets the estimate aggregate value for a specified key.
+    fn get(&self, key: TKPyHashable) -> u64 {
+        self.inner.get(&key)
+    }
+    /// Empties the set of the CountMinSketch object.
+    fn clear(&mut self) {
+        self.inner.clear();
     }
 }
 
@@ -310,7 +291,8 @@ impl SampleUnstable {
 fn top_kat(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_class::<HyperLogLog>()?;
     m.add_class::<TopK>()?;
-    m.add_class::<SampleTotal>()?;
-    m.add_class::<SampleUnstable>()?;
+    m.add_class::<SimpleRandomSample>()?;
+    m.add_class::<UnstableReservoirSample>()?;
+    m.add_class::<CountMinSketch>()?;
     Ok(())
 }
