@@ -273,7 +273,7 @@ impl CountMinSketch {
     fn push(&mut self, key: TKPyHashable, value: u64) -> u64 {
         self.inner.push(&key, &value)
     }
-    /// Unions the aggregated value for a key with another value.
+    /// Unions the aggregated value for a key with another value. (Actually seems to replace the value with the greater of the two, TODO?)
     fn union_assign(&mut self, key: TKPyHashable, value: u64) {
         self.inner.union_assign(&key, &value);
     }

@@ -1,7 +1,7 @@
-from top_kat import SampleTotal
+from top_kat import SimpleRandomSample
 
 def test_unseeded():
-    sample_t = SampleTotal(100, 20)
+    sample_t = SimpleRandomSample(100, 20)
     sampled = 0
     for _ in range(100):
         r = sample_t.sample()
@@ -11,17 +11,17 @@ def test_unseeded():
     assert sampled == 20
 
 def test_seeded():
-    sample_t_1 = SampleTotal(100, 20, 727)
+    sample_t_1 = SimpleRandomSample(100, 20, 727)
     sampled_1 = []
     for _ in range(100):
         sampled_1.append(sample_t_1.sample())
     
-    sample_t_2 = SampleTotal(100, 20, 727)
+    sample_t_2 = SimpleRandomSample(100, 20, 727)
     sampled_2 = []
     for _ in range(100):
         sampled_2.append(sample_t_2.sample())
 
-    sample_t_3 = SampleTotal(100, 20, 728)
+    sample_t_3 = SimpleRandomSample(100, 20, 728)
     sampled_3 = []
     for _ in range(100):
         sampled_3.append(sample_t_3.sample())
