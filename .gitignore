@@ -1,4 +1,5 @@
 target
+dist
 Cargo.lock
 tests/__pycache__
 .pytest_cache
