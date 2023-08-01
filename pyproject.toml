@@ -4,7 +4,7 @@ build-backend = "maturin"
 
 [project]
 name = "top-kat"
-version = "0.1.0"
+version = "0.1.1"
 description = "A collection of streaming algorithms."
 readme = "README.md"
 keywords = ["streaming", "algorithms"]
