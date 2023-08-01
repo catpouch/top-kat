@@ -6,14 +6,17 @@
 name: CI
 
 on:
-  push:
-    branches:
-      - main
-      - master
-    tags:
-      - '*'
+  # push:
+  #   branches:
+  #     - main
+  #     - master
+  #   tags:
+  #     - '*'
   pull_request:
   workflow_dispatch:
+  release:
+    types:
+    - published
 
 permissions:
   contents: read
@@ -102,19 +105,17 @@ jobs:
   #         name: wheels
   #         path: dist
 
-  # release:
-  #   name: Release
-  #   runs-on: ubuntu-latest
-  #   if: "startsWith(github.ref, 'refs/tags/')"
-  #   needs: [linux, windows, macos, sdist]
-  #   steps:
-  #     - uses: actions/download-artifact@v3
-  #       with:
-  #         name: wheels
-  #     - name: Publish to PyPI
-  #       uses: PyO3/maturin-action@v1
-  #       env:
-  #         MATURIN_PYPI_TOKEN: ${{ secrets.PYPI_API_TOKEN }}
-  #       with:
-  #         command: upload
-  #         args: --skip-existing *
+  release:
+    name: Release
+    runs-on: ubuntu-latest
+    # if: startsWith(github.ref, 'refs/tags/')
+    needs: [linux, windows, macos]
+    steps:
+      - uses: actions/download-artifact@v3
+        with:
+          name: wheels
+      - name: Publish
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          repository-url: https://test.pypi.org/legacy/
+          skip-existing: true
