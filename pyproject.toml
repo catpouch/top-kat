@@ -4,6 +4,13 @@ build-backend = "maturin"
 
 [project]
 name = "top-kat"
+version = "0.1.0"
+description = "A collection of streaming algorithms."
+readme = "README.md"
+keywords = ["streaming", "algorithms"]
+authors = [
+  {name = "cat pouch", email = "isaac@bytewax.io" }
+]
 requires-python = ">=3.7"
 classifiers = [
     "Programming Language :: Rust",
