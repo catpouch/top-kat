@@ -95,7 +95,7 @@ impl HyperLogLog {
     /// Initializes instance with specified error tolerance.
     ///
     /// Args:
-    ///     error_rate: Accepted error tolerance. Only very specific values seem to work, more documentation necessary.
+    ///     error_rate: Accepted error tolerance between 0.00407 and 0.3677, inclusive. Why those specific values? No clue. The author of the Rust crate put a whole load of magic numbers in their code that I can't be bothered to figure out.
     #[new]
     fn new(error_rate: f64) -> Self {
         Self {
@@ -122,7 +122,7 @@ impl HyperLogLog {
     }
     /// Intersects a second HyperLogLog object into this one.
     ///
-    /// TODO
+    /// Supposedly this is not the same as getting a HyperLogLog with a set equivalent to the intersection of the two previous sets, but the crate docs don't elaborate any further and I haven't found any edge cases in my testing. Be ready for strange behavior.
     fn intersect(&mut self, src: &Self) {
         self.inner.intersect(&src.inner);
     }
@@ -272,10 +272,6 @@ impl CountMinSketch {
     /// Pushes a key/value pair to the total counted set.
     fn push(&mut self, key: TKPyHashable, value: u64) -> u64 {
         self.inner.push(&key, &value)
-    }
-    /// Unions the aggregated value for a key with another value. (Actually seems to replace the value with the greater of the two, TODO?)
-    fn union_assign(&mut self, key: TKPyHashable, value: u64) {
-        self.inner.union_assign(&key, &value);
     }
     /// Gets the estimate aggregate value for a specified key.
     fn get(&self, key: TKPyHashable) -> u64 {
