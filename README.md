@@ -9,7 +9,7 @@ Python bindings to the [streaming_algorithms](https://docs.rs/streaming_algorith
 
 ## Installation
 
-`pip install top-kat`
+```pip install top-kat```
 Appears as top_kat in code.
 
 ## Notes
