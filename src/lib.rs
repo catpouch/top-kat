@@ -144,8 +144,8 @@ impl TopK {
     ///
     /// Args:
     ///     k: Size of top values set to keep track of.
-    ///     probability: TODO
-    ///     tolerance: TODO
+    ///     probability: Probability of an error occurring, between 0 and 1. Determines number of hash functions used.
+    ///     tolerance: Accepted error tolerance, between 0 and 1.
     #[new]
     fn new(k: usize, probability: f64, tolerance: f64) -> Self {
         Self {
