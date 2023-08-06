@@ -4,7 +4,7 @@ Python bindings to the [streaming_algorithms](https://docs.rs/streaming_algorith
 - Count-min sketch
 - HyperLogLog
 - Simple random sample
-- Reservoir sample (unstable)
+- Unstable reservoir sample
 - Top-K
 
 ## Installation
