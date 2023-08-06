@@ -32,16 +32,16 @@ def test_union():
     hll1.union(hll2)
     assert round(hll1.len()) == 2 * len(data)
 
-def test_intersect():
-    hll1 = HyperLogLog(0.00408)
-    hll2 = HyperLogLog(0.00408)
-    for x in data:
-        hll1.push(x)
-        hll2.push(x + 5)
-    assert round(hll1.len()) == len(data)
-    assert round(hll2.len()) == len(data)
-    hll1.intersect(hll2)
-    assert round(hll1.len()) == len(data) // 2
+# def test_intersect():
+#     hll1 = HyperLogLog(0.00408)
+#     hll2 = HyperLogLog(0.00408)
+#     for x in data:
+#         hll1.push(x)
+#         hll2.push(x + 5)
+#     assert round(hll1.len()) == len(data)
+#     assert round(hll2.len()) == len(data)
+#     hll1.intersect(hll2)
+#     assert round(hll1.len()) == len(data) // 2
 
 def test_clear():
     hll = HyperLogLog(0.00408)

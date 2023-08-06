@@ -120,12 +120,12 @@ impl HyperLogLog {
     fn union(&mut self, src: &Self) {
         self.inner.union(&src.inner);
     }
-    /// Intersects a second HyperLogLog object into this one.
-    ///
-    /// Supposedly this is not the same as getting a HyperLogLog with a set equivalent to the intersection of the two previous sets, but the crate docs don't elaborate any further and I haven't found any edge cases in my testing. Be ready for strange behavior.
-    fn intersect(&mut self, src: &Self) {
-        self.inner.intersect(&src.inner);
-    }
+    // /// Intersects a second HyperLogLog object into this one.
+    // ///
+    // /// Supposedly this is not the same as getting a HyperLogLog with a set equivalent to the intersection of the two previous sets, but the crate docs don't elaborate any further and I haven't found any edge cases in my testing. Be ready for strange behavior.
+    // fn intersect(&mut self, src: &Self) {
+    //     self.inner.intersect(&src.inner);
+    // }
     /// Empties the set of the HyperLogLog object.
     fn clear(&mut self) {
         self.inner.clear();
@@ -248,7 +248,7 @@ impl UnstableReservoirSample {
     }
 }
 
-/// An implementation of the CountMinSketch data structure.
+/// An implementation of the Count-Min Sketch data structure.
 /// 
 /// Also referred to as the counting Bloom filter, keeps approximate track of values associated with keys while using sub-linear space.
 #[pyclass]
@@ -261,8 +261,8 @@ impl CountMinSketch {
     /// Initializes instance with probability and error tolerance.
     /// 
     /// Args:
-    ///     probability: TODO
-    ///     tolerance: Accepted error tolerance. TODO
+    ///     probability: Probability of an error occurring, between 0 and 1. Determines number of hash functions used.
+    ///     tolerance: Accepted error tolerance, between 0 and 1.
     #[new]
     fn new(probability: f64, tolerance: f64) -> Self {
         Self {
