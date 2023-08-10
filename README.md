@@ -1,5 +1,7 @@
 # top-kat
 
+[![Documentation Status](https://readthedocs.org/projects/top-kat/badge/?version=latest)](https://top-kat.readthedocs.io/en/latest/?badge=latest)
+
 Python bindings to the [streaming_algorithms](https://docs.rs/streaming_algorithms/latest/streaming_algorithms/) Rust crate. Includes the following algorithms:
 - Count-min sketch
 - HyperLogLog

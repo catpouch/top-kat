@@ -20,8 +20,8 @@ classifiers = [
 
 [project.optional-dependencies]
 dev = [
-  "sphinx==7.1.2",
-  "sphinx-rtd-theme"
+  "sphinx>=6",
+  "sphinx-rtd-theme>=1"
 ]
 
 
