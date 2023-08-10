@@ -18,6 +18,12 @@ classifiers = [
     "Programming Language :: Python :: Implementation :: PyPy",
 ]
 
+[project.optional-dependencies]
+dev = [
+  "sphinx==7.1.2",
+  "sphinx-rtd-theme"
+]
+
 
 [tool.maturin]
 features = ["pyo3/extension-module"]

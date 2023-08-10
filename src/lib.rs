@@ -120,6 +120,7 @@ impl HyperLogLog {
     fn union(&mut self, src: &Self) {
         self.inner.union(&src.inner);
     }
+    // TODO: document correct behavior and add back in
     // /// Intersects a second HyperLogLog object into this one.
     // ///
     // /// Supposedly this is not the same as getting a HyperLogLog with a set equivalent to the intersection of the two previous sets, but the crate docs don't elaborate any further and I haven't found any edge cases in my testing. Be ready for strange behavior.
