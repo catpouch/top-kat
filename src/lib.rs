@@ -1,9 +1,12 @@
+mod tdigest;
+
 use pyo3::prelude::*;
 use rand::rngs::StdRng;
 use rand::SeedableRng;
 use std::hash::{Hash, Hasher};
 use streaming_algorithms;
 
+// TODO: write docstring about speed of TKPyHashed
 #[derive(Clone)]
 enum TKPyHashable {
     TKPyInt(i32),
@@ -284,6 +287,37 @@ impl CountMinSketch {
     }
 }
 
+#[pyclass]
+struct TDigest {
+    inner: tdigest::TDigest,
+}
+
+#[pymethods]
+impl TDigest {
+    #[new]
+    fn new(delta: f32) -> Self {
+        Self {
+            inner: tdigest::TDigest::new_empty(delta),
+        }
+    }
+
+    fn add_value(&mut self, value: f32) {
+        self.inner.add_value(value);
+    }
+
+    fn merge_vec_unsorted(&mut self, v: Vec<f32>) {
+        self.inner.merge_vec(v);
+    }
+
+    fn estimate_value(&self, q: f32) -> f32 {
+        self.inner.estimate_value(q)
+    }
+
+    fn estimate_quantile(&self, v: f32) -> f32 {
+        self.inner.estimate_quantile(v)
+    }
+}
+
 #[pymodule]
 fn top_kat(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_class::<HyperLogLog>()?;
@@ -291,5 +325,6 @@ fn top_kat(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_class::<SimpleRandomSample>()?;
     m.add_class::<UnstableReservoirSample>()?;
     m.add_class::<CountMinSketch>()?;
+    m.add_class::<TDigest>()?;
     Ok(())
 }
