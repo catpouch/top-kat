@@ -6,7 +6,7 @@ use rand::SeedableRng;
 use std::hash::{Hash, Hasher};
 use streaming_algorithms;
 
-// TODO: write docstring about speed of TKPyHashed
+// TODO: write docstring about speed of TKPyHashed (or add to readme)
 #[derive(Clone)]
 enum TKPyHashable {
     TKPyInt(i32),
@@ -301,12 +301,12 @@ impl TDigest {
         }
     }
 
-    fn add_value(&mut self, value: f32) {
-        self.inner.add_value(value);
+    fn push_list_unsorted(&mut self, v: Vec<f32>) {
+        self.inner.merge_vec_unsorted(v);
     }
 
-    fn merge_vec_unsorted(&mut self, v: Vec<f32>) {
-        self.inner.merge_vec(v);
+    fn push_list_sorted(&mut self, v: Vec<f32>) {
+        self.inner.merge_vec_sorted(v);
     }
 
     fn estimate_value(&self, q: f32) -> f32 {

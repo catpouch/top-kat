@@ -23,13 +23,6 @@ struct Centroid {
 }
 
 impl Centroid {
-    fn new(mean: f32, weight: i32) -> Self {
-        Self {
-            mean: mean,
-            weight: weight,
-        }
-    }
-
     // combines two centroids. probably room for optimization here
     fn merge(&mut self, c: &Centroid) {
         let sum_weights = self.weight + c.weight;
@@ -48,8 +41,6 @@ impl Centroid {
 pub struct TDigest {
     centroids: Vec<Centroid>,
     delta: f32,
-    buffer: [f32; 32], // used exclusively for add_value
-    index: u8, // see above comment
     temp_centroids: Vec<Centroid>, // used exclusively for cluster_centroids to save on vector allocations
 }
 
@@ -59,8 +50,6 @@ impl TDigest {
         Self {
             centroids: Vec::new(),
             delta,
-            buffer: [0.0; 32],
-            index: 0,
             temp_centroids: Vec::new(),
         }
     }
@@ -79,20 +68,8 @@ impl TDigest {
     //     digest
     // }
 
-    // apparently, this is not a std function
-    fn clamp(v: f32, lo: f32, hi: f32) -> f32 {
-        if v > hi {
-            hi
-        } else if v < lo {
-            lo
-        } else {
-            v
-        }
-    }
-
-    // does what it says. probably not necessary since it's only used once
-    fn vals_to_centroids(v: Vec<f32>) -> Vec<Centroid> {
-        v.iter().map(|x| Centroid::new(*x, 1)).collect()
+    fn vals_to_centroids(v: impl IntoIterator<Item = f32>) -> impl IntoIterator<Item = Centroid> {
+        v.into_iter().map(|x| Centroid {mean: x, weight: 1})
     }
 
     // THIS FUNCTION WILL DIE IF THE INTERNAL CENTROIDS AREN'T SORTED BY MEAN!!!!!
@@ -127,15 +104,20 @@ impl TDigest {
     // will typically use O(log n) time, could take less in the case of an exact match
     // not sure how much optimization there is to be had here aside from a better algorithm
     fn search_centroids(&self, mean: f32) -> usize {
+        if self.centroids.len() == 0 {
+            return 0;
+        }
+
         let mut lower: usize = 0;
         let mut upper: usize = self.centroids.len() - 1;
+        if mean < self.centroids[lower].mean {
+            return 0;
+        } else if mean > self.centroids[upper].mean {
+            return upper + 1;
+        }
         loop {
             let center = ((lower + upper) as f32 / 2.0).floor() as usize;
-            if center == 0 {
-                return 0;
-            } else if center == self.centroids.len() - 1 {
-                return center;
-            } else if mean > self.centroids[center].mean && mean <= self.centroids[center + 1].mean {
+            if mean > self.centroids[center].mean && mean <= self.centroids[center + 1].mean {
                 return center + 1;
             } else if mean == self.centroids[center].mean {
                 return center;
@@ -154,9 +136,26 @@ impl TDigest {
     // not sure if this function could be optimized, but its usage can
     // gets the weight-based quantile of a centroid in the digest (given by index)
     fn centroid_quantile(&self, index: usize) -> f32 {
-        let weight_to_index = self.centroids.iter().take(index + 1).fold(0, |sum, x| sum + x.weight) as f32;
-        let total_weight = weight_to_index + self.centroids.iter().skip(index + 1).fold(0, |sum, x| sum + x.weight) as f32;
+        let weight_to_index = self.centroids.iter().take(index + 1).map(|c| c.weight).sum::<i32>() as f32;
+        let total_weight = weight_to_index + self.centroids.iter().skip(index + 1).map(|c| c.weight).sum::<i32>() as f32;
         (weight_to_index - (self.centroids[index].weight as f32 / 2.0)) / total_weight
+    }
+
+    // TODO: rewrite using IntoIter instead of vec
+    fn merge_sorted_centroids(&mut self, b: Vec<Centroid>) {
+        let mut j = 0;
+        let mut i = 0;
+        if b.len() == 0 {
+            return
+        }
+        while i < self.centroids.len() {
+            if b[j].mean <= self.centroids[i].mean {
+                self.centroids.insert(i, b[j]);
+                j += 1;
+            }
+            i += 1;
+        }
+        self.centroids.extend(b.iter().skip(j));
     }
 
     // based on algorithm in gresearch paper
@@ -165,7 +164,7 @@ impl TDigest {
         let index = self.search_centroids(v);
         if index == 0 {
             return 0.0;
-        } else if index == self.centroids.len() - 1 {
+        } else if index == self.centroids.len() {
             return 1.0;
         }
         let quantile_l = self.centroid_quantile(index - 1);
@@ -181,7 +180,7 @@ impl TDigest {
             return 0.0;
         }
 
-        let count_ = self.centroids.iter().fold(0, |sum, x| sum + x.weight) as f32;
+        let count_ = self.centroids.iter().map(|c| c.weight).sum::<i32>() as f32;
         let rank = count_ * q;
 
         let self_min = self.centroids[0].mean;
@@ -244,26 +243,19 @@ impl TDigest {
         }
 
         let value = self.centroids[pos].mean + ((rank - t) / self.centroids[pos].weight as f32 - 0.5) * delta;
-        Self::clamp(value, min, max)
+        value.max(min).min(max)
     }
     
-    // wanted to add a sorted version of this but i couldn't think of a version to save that much time and this is pretty fast already. if you wanted to make it super duper fast that's what you would do i guess
     /// Merges an unsorted vector of values into the T-Digest.
-    pub fn merge_vec(&mut self, v: Vec<f32>) {
+    pub fn merge_vec_unsorted(&mut self, v: impl IntoIterator<Item = f32>) {
         self.centroids.extend(Self::vals_to_centroids(v));
-        self.centroids.sort_by(|a, b| a.mean.partial_cmp(&b.mean).unwrap());
+        self.centroids.sort_unstable_by(|a, b| a.mean.partial_cmp(&b.mean).unwrap());
         self.cluster_centroids();
     }
 
-    /// Adds a single value into the T-Digest, using amortization.
-    /// Does batch updates to the T-Digest every 32 added values. In the meantime, the structure will not change.
-    pub fn add_value(&mut self, value: f32) {
-        self.buffer[self.index as usize] = value;
-        self.index += 1;
-        if self.index == 32 {
-            self.merge_vec(self.buffer.to_vec());
-            self.buffer = [0.0; 32];
-            self.index = 0;
-        }
+    /// Merges a sorted vector of values into the T-Digest.
+    pub fn merge_vec_sorted(&mut self, v: impl IntoIterator<Item = f32>) {
+        self.merge_sorted_centroids(Self::vals_to_centroids(v).into_iter().collect());
+        self.cluster_centroids();
     }
 }
