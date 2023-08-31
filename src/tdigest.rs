@@ -189,37 +189,34 @@ impl TDigest {
         // the following chunk of code does the same thing as search_centroids but it's based on quantile instead of mean and also it's much faster for the use case (most queries are going to be at the extremes, so linear search works out to be pretty fast)
         let mut pos: usize;
         let mut t: f32;
-        if q > 0.5 {
-            if q >= 1.0 {
-                return self_max;
-            }
-
-            pos = 0;
-            t = count_;
-
-            for (k, centroid) in self.centroids.iter().enumerate().rev() {
-                t -= centroid.weight as f32;
-
-                if rank >= t {
-                    pos = k;
-                    break;
+        match q {
+            q if q <= 0.0 => return self_min,
+            q if q >= 1.0 => return self_max,
+            q if q > 0.5 => {
+                pos = 0;
+                t = count_;
+    
+                for (k, centroid) in self.centroids.iter().enumerate().rev() {
+                    t -= centroid.weight as f32;
+    
+                    if rank >= t {
+                        pos = k;
+                        break;
+                    }
                 }
-            }
-        } else {
-            if q <= 0.0 {
-                return self_min;
-            }
-
-            pos = self.centroids.len() - 1;
-            t = 0.0;
-
-            for (k, centroid) in self.centroids.iter().enumerate() {
-                if rank < t + centroid.weight as f32 {
-                    pos = k;
-                    break;
+            },
+            _ => {
+                pos = self.centroids.len() - 1;
+                t = 0.0;
+    
+                for (k, centroid) in self.centroids.iter().enumerate() {
+                    if rank < t + centroid.weight as f32 {
+                        pos = k;
+                        break;
+                    }
+    
+                    t += centroid.weight as f32;
                 }
-
-                t += centroid.weight as f32;
             }
         }
 
